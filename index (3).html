@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Aplikasi Pain</title>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+  <style>
+    :root {
+      --primary: #4361ee;
+      --primary-light: #4895ef;
+      --danger: #f72585;
+      --warning: #f8961e;
+      --light: #f8f9fa;
+      --dark: #212529;
+      --border-radius: 10px;
+      --box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    }
+
+    body {
+      font-family: 'Poppins', sans-serif;
+      background-color: #f5f7ff;
+      margin: 0;
+      padding: 20px;
+      color: var(--dark);
+    }
+
+    .container {
+      max-width: 800px;
+      margin: 0 auto;
+    }
+
+    .app-header {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 20px;
+    }
+
+    .crown-icon {
+      color: gold;
+      font-size: 24px;
+      text-shadow: 0 0 3px rgba(0,0,0,0.3);
+    }
+
+    .card {
+      background: white;
+      border-radius: var(--border-radius);
+      box-shadow: var(--box-shadow);
+      padding: 20px;
+      margin-bottom: 20px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 15px;
+    }
+
+    th, td {
+      padding: 12px 10px;
+      border-bottom: 1px solid #f0f0f0;
+      text-align: left;
+    }
+
+    th {
+      background-color: var(--primary);
+      color: white;
+    }
+
+    .point-action {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .btn-icon {
+      background: none;
+      border: none;
+      color: var(--danger);
+      cursor: pointer;
+      font-size: 16px;
+      margin-left: 8px;
+    }
+
+    .btn {
+      padding: 8px 15px;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      font-family: 'Poppins';
+      font-weight: 500;
+    }
+
+    .btn-primary {
+      background-color: var(--primary);
+      color: white;
+    }
+
+    .btn-danger {
+      background-color: var(--danger);
+      color: white;
+    }
+
+    .btn-warning {
+      background-color: var(--warning);
+      color: white;
+    }
+
+    input, select {
+      width: 100%;
+      padding: 10px;
+      border: 1px solid #ddd;
+      border-radius: 5px;
+      font-family: 'Poppins';
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="app-header">
+      <i class="fas fa-crown crown-icon"></i>
+      <h1>perhitungan Poin homesol</h1>
+    </div>
+
+    <!-- Form Input Section -->
+    <div class="card">
+      <table>
+        <tr>
+          <td>Tanggal</td>
+          <td><input type="date" id="tanggal"></td>
+        </tr>
+        <tr>
+          <td>Layanan</td>
+          <td>
+            <select id="layanan">
+              <option value="">Pilih Layanan</option>
+            </select>
+          </td>
+        </tr>
+        <tr>
+          <td>Paket</td>
+          <td>
+            <select id="paket">
+              <option value="">Pilih Paket</option>
+            </select>
+          </td>
+        </tr>
+        <tr>
+          <td>Point</td>
+          <td>
+            <div class="point-action">
+              <span id="poin">0</span>
+              <button id="btnTambah" class="btn btn-primary">Tambah</button>
+            </div>
+          </td>
+        </tr>
+      </table>
+    </div>
+
+    <!-- Total Point -->
+    <div class="card" style="text-align:center;background:linear-gradient(135deg,var(--primary),var(--primary-light));color:white;">
+      <h3>Total Point Anda</h3>
+      <div style="font-size:24px;font-weight:bold;" id="totalPoin">0</div>
+    </div>
+
+    <!-- History Section -->
+    <div class="card">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:15px;">
+        <h3>Daftar Kerjaan</h3>
+        <button id="btnToggleHistory" class="btn btn-warning">Sembunyikan</button>
+      </div>
+      
+      <table id="tabelKerjaan">
+        <thead>
+          <tr>
+            <th style="width:30%">Tanggal</th>
+            <th style="width:50%">Paket</th>
+            <th style="width:20%">Point</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </div>
+
+  <script>
+    // Google Apps Script URL yang Anda berikan
+    const API_URL = 'https://script.google.com/macros/s/AKfycbyuSjt7dlJLXB_283b7dQNpEWm3LAjcPEwnO8ho0nF6OH82x9jKqXuRjB6pKp_-OcfLBg/exec';
+    
+    // Variabel global
+    let dataLayanan = {};
+    let daftarKerjaan = [];
+    let isHistoryVisible = true;
+    
+    // Elemen DOM
+    const elements = {
+      tanggal: document.getElementById('tanggal'),
+      layanan: document.getElementById('layanan'),
+      paket: document.getElementById('paket'),
+      poin: document.getElementById('poin'),
+      btnTambah: document.getElementById('btnTambah'),
+      btnToggleHistory: document.getElementById('btnToggleHistory'),
+      tabelBody: document.querySelector('#tabelKerjaan tbody'),
+      totalPoin: document.getElementById('totalPoin')
+    };
+    
+    // Inisialisasi
+    document.addEventListener('DOMContentLoaded', async () => {
+      elements.tanggal.valueAsDate = new Date();
+      await loadDataFromAPI();
+      loadFromLocalStorage();
+      setupEventListeners();
+    });
+    
+    // Load data dari Google Apps Script
+    async function loadDataFromAPI() {
+      try {
+        const response = await fetch(API_URL);
+        const result = await response.json();
+        
+        if (result && result.data) {
+          dataLayanan = {};
+          result.data.forEach(item => {
+            if (item.layanan) {
+              if (!dataLayanan[item.layanan]) {
+                dataLayanan[item.layanan] = [];
+              }
+              dataLayanan[item.layanan].push({
+                paket: item.paket || '',
+                poin: Number(item.poin) || 0
+              });
+            }
+          });
+          
+          updateLayananDropdown();
+        } else {
+          throw new Error('Format data tidak valid');
+        }
+      } catch (error) {
+        console.error('Error loading data:', error);
+        alert('Gagal memuat data layanan dari server');
+      }
+    }
+    
+    function updateLayananDropdown() {
+      elements.layanan.innerHTML = '<option value="">Pilih Layanan</option>';
+      Object.keys(dataLayanan).sort().forEach(layanan => {
+        const option = document.createElement('option');
+        option.value = layanan;
+        option.textContent = layanan;
+        elements.layanan.appendChild(option);
+      });
+    }
+    
+    function setupEventListeners() {
+      elements.layanan.addEventListener('change', () => {
+        elements.paket.innerHTML = '<option value="">Pilih Paket</option>';
+        if (elements.layanan.value && dataLayanan[elements.layanan.value]) {
+          dataLayanan[elements.layanan.value].forEach(item => {
+            const option = document.createElement('option');
+            option.value = item.paket;
+            option.textContent = `${item.paket} (${item.poin} point)`;
+            elements.paket.appendChild(option);
+          });
+        }
+        updatePoinDisplay();
+      });
+      
+      elements.paket.addEventListener('change', updatePoinDisplay);
+      elements.btnTambah.addEventListener('click', tambahKerjaan);
+      elements.btnToggleHistory.addEventListener('click', toggleHistory);
+    }
+    
+    function updatePoinDisplay() {
+      if (elements.layanan.value && elements.paket.value) {
+        const layanan = dataLayanan[elements.layanan.value];
+        const selectedPaket = layanan.find(item => item.paket === elements.paket.value);
+        elements.poin.textContent = selectedPaket ? selectedPaket.poin : '0';
+      } else {
+        elements.poin.textContent = '0';
+      }
+    }
+    
+    function tambahKerjaan() {
+      if (!elements.layanan.value || !elements.paket.value) {
+        alert('Harap pilih layanan dan paket terlebih dahulu!');
+        return;
+      }
+      
+      const kerjaan = {
+        tanggal: elements.tanggal.value || new Date().toISOString().split('T')[0],
+        paket: elements.paket.value,
+        poin: Number(elements.poin.textContent) || 0
+      };
+      
+      daftarKerjaan.push(kerjaan);
+      saveToLocalStorage();
+      renderTabel();
+      updateTotalPoin();
+      
+      // Reset form
+      elements.paket.value = '';
+      elements.poin.textContent = '0';
+    }
+    
+    function renderTabel() {
+      elements.tabelBody.innerHTML = '';
+      daftarKerjaan.forEach((kerjaan, index) => {
+        const row = document.createElement('tr');
+        row.innerHTML = `
+          <td>${formatTanggal(kerjaan.tanggal)}</td>
+          <td>
+            ${kerjaan.paket}
+            <button class="btn-icon" onclick="hapusKerjaan(${index})" title="Hapus">
+              <i class="fas fa-trash-alt"></i>
+            </button>
+          </td>
+          <td>${kerjaan.poin}</td>
+        `;
+        elements.tabelBody.appendChild(row);
+      });
+    }
+    
+    function toggleHistory() {
+      isHistoryVisible = !isHistoryVisible;
+      elements.tabelBody.style.display = isHistoryVisible ? '' : 'none';
+      elements.btnToggleHistory.textContent = isHistoryVisible ? 'Sembunyikan' : 'Tampilkan';
+    }
+    
+    function updateTotalPoin() {
+      const total = daftarKerjaan.reduce((sum, item) => sum + item.poin, 0);
+      elements.totalPoin.textContent = total;
+    }
+    
+    function saveToLocalStorage() {
+      localStorage.setItem('daftarKerjaan', JSON.stringify(daftarKerjaan));
+    }
+    
+    function loadFromLocalStorage() {
+      const saved = localStorage.getItem('daftarKerjaan');
+      if (saved) {
+        daftarKerjaan = JSON.parse(saved);
+        renderTabel();
+        updateTotalPoin();
+      }
+    }
+    
+    function formatTanggal(tanggalStr) {
+      const options = { day: '2-digit', month: '2-digit', year: 'numeric' };
+      return new Date(tanggalStr).toLocaleDateString('id-ID', options);
+    }
+    
+    function hapusKerjaan(index) {
+      if (confirm('Apakah Anda yakin ingin menghapus item ini?')) {
+        daftarKerjaan.splice(index, 1);
+        saveToLocalStorage();
+        renderTabel();
+        updateTotalPoin();
+      }
+    }
+    
+    window.hapusKerjaan = hapusKerjaan;
+  </script>
+</body>
+</html>

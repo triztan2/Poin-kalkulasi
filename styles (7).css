@@ -1,0 +1,8 @@
+const publicSheetUrl = "https://docs.google.com/spreadsheets/d/1ABCD1234/edit#gid=0";
+Tabletop.init({
+    key: publicSheetUrl,
+    callback: function(data) {
+        dataMaster = data;
+        // Isi dropdown...
+    }
+});
